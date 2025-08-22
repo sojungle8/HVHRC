@@ -2,336 +2,521 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HV ↔ HRC 轉換計算機（自動互換，最多一位小數）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>超級貪吃蛇 Super Snake</title>
 <style>
-  :root{--bg:#0f1115;--card:#151923;--ink:#e8ecf3;--ink-d:#a9b1c3;--grid:#232a3a;--acc:#5ee2a0}
+  :root{
+    --bg:#0f1117;--card:#151a23;--ink:#e6edf7;--muted:#9aa4b2;--acc:#5ee2a0;--warn:#ffcf5a;--danger:#ff6b6b
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC",sans-serif}
-  .wrap{max-width:1100px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
-  @media (max-width:980px){.wrap{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--grid);border-radius:14px;box-shadow:0 6px 18px #00000033}
-  .pad{padding:18px 20px}
-  h1{font-size:20px;margin:0 0 10px}
-  h2{font-size:16px;margin:14px 0 8px}
-  .muted{color:var(--ink-d);font-size:13px}
-  .row{display:grid;grid-template-columns:120px 1fr;align-items:center;gap:10px;margin:12px 0}
-  .lbl{color:var(--ink-d)}
-  input[type="number"]{width:100%;padding:12px;border:1px solid var(--grid);background:#0e121a;color:var(--ink);border-radius:10px;font-size:16px;outline:none}
-  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{appearance:none;margin:0}
-  .btns{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--grid);background:#0e121a;color:var(--ink);cursor:pointer}
-  .btn:hover{border-color:#2d354a}
-  .table-wrap{max-height:260px;overflow:auto;border:1px solid var(--grid);border-radius:10px;margin-top:10px}
-  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-  th,td{padding:8px 10px;border-bottom:1px solid var(--grid)}
-  th{position:sticky;top:0;background:#121826;color:#aeb7c8}
-  /* Modal for source code */
-  .modal{position:fixed;inset:0;display:none;background:#00000080;backdrop-filter:blur(2px)}
-  .modal.open{display:flex;align-items:center;justify-content:center}
-  .modal-card{width:min(1000px,92vw);height:min(80vh,840px);background:#0f141f;border:1px solid #2a3246;border-radius:14px;box-shadow:0 10px 30px #00000066;display:flex;flex-direction:column}
-  .modal-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #223;gap:8px}
-  .modal-h .ttl{font-size:14px;color:#cbd3e1}
-  .modal-h .actions{display:flex;gap:8px}
-  .modal-h button{padding:6px 10px;border:1px solid #2d354a;background:#111726;color:#e8ecf3;border-radius:8px;cursor:pointer}
-  .modal-b{padding:10px;height:100%;overflow:auto}
-  pre{margin:0;font-size:12px;line-height:1.45;color:#bfe1ff;background:#0b0f18;border-radius:8px;padding:10px;border:1px solid #1e2433;white-space:pre;overflow:auto}
+  body{margin:0;background:linear-gradient(180deg,#0b0e13,#0f1117);color:var(--ink);
+    font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","PingFang TC",Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1100px;margin:18px auto;padding:0 12px;display:grid;grid-template-columns:1fr;gap:14px}
+  header{display:flex;gap:10px;align-items:center;justify-content:space-between}
+  h1{font-size:18px;margin:0;letter-spacing:.5px}
+  .panel{background:var(--card);border:1px solid #232b3a;border-radius:12px;padding:10px}
+  .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .hud .pill{background:#0f1420;border:1px solid #283248;border-radius:999px;padding:6px 10px;color:var(--muted)}
+  .hud strong{color:var(--ink)}
+  .btn{background:#172033;border:1px solid #29344d;color:var(--ink);padding:8px 12px;border-radius:10px;cursor:pointer}
+  .btn:hover{filter:brightness(1.06)}
+  .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .accent{background:#153225;border-color:#296a3d}
+  .warn{background:#2e2713;border-color:#5a4a1f}
+  canvas{display:block;width:100%;height:auto;background:#0b0f17;border-radius:12px;border:1px solid #232b3a}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grow{flex:1 1 auto}
+  details{background:#101625;border:1px solid #22304a;border-radius:12px;padding:8px}
+  summary{cursor:pointer;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .kbd{padding:2px 6px;border:1px solid #44516a;border-radius:6px;background:#0e1422;color:#b8c3d6}
+  /* 虛擬搖桿與鍵 */
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dpad{display:grid;grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+    gap:8px;justify-items:center;align-items:center}
+  .dpad button{width:64px;height:64px;border-radius:14px;border:1px solid #2b3856;background:#111827;color:#c7d2fe;font-size:18px}
+  .dpad .up{grid-area:up} .dpad .down{grid-area:down}
+  .dpad .left{grid-area:left} .dpad .right{grid-area:right}
+  .actions{display:flex;gap:10px;justify-content:center}
+  .actions button{min-width:96px;height:48px;border-radius:12px;border:1px solid #2b3856;background:#101826;color:#e5e7eb}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #2b2f3c;color:#aab4c3}
+  .board-wrap{position:relative}
+  .toast{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .toast span{background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:10px 14px;border:1px solid #2b3856;border-radius:10px}
+  .badges{display:flex;gap:6px;flex-wrap:wrap}
+  .lb{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+  .lb div{display:flex;justify-content:space-between;background:#0f1521;border:1px solid #22304a;border-radius:8px;padding:6px 10px}
+  @media(min-width:840px){
+    .wrap{grid-template-columns:3fr 2fr}
+    .controls{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <!-- 左：計算器 -->
-  <section class="card pad">
-    <h1>HV ↔ HRC 轉換計算機</h1>
-    <div class="muted">HRC 20–68 對應 HV（每 1 刻度一筆）＋分段線性插值；輸入任一欄，另一欄自動換算；結果最多顯示一位小數（整數不顯示 .0）。</div>
-
-    <h2>輸入任一欄，另一欄自動換算</h2>
+  <header>
+    <h1>🍏 超級貪吃蛇 <span class="tag">Web</span></h1>
     <div class="row">
-      <div class="lbl">HRC</div>
-      <div class="btns">
-        <input id="inHRC" type="number" inputmode="decimal" step="0.1" value="50" />
-        <button class="btn" data-hrc="-0.5">−0.5</button>
-        <button class="btn" data-hrc="+0.5">+0.5</button>
-        <button class="btn" data-hrc="-0.1">−0.1</button>
-        <button class="btn" data-hrc="+0.1">+0.1</button>
+      <button class="btn accent" id="btnStart">開始 / 重新開始</button>
+      <button class="btn" id="btnPause">暫停</button>
+      <button class="btn warn" id="btnDash" title="衝刺（消耗能量）">衝刺</button>
+    </div>
+  </header>
+
+  <div class="board-wrap panel">
+    <canvas id="game" width="720" height="720"></canvas>
+    <div class="toast" id="toast" style="display:none"><span id="toastText"></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="hud">
+      <div class="pill">分數：<strong id="score">0</strong></div>
+      <div class="pill">等級：<strong id="level">1</strong></div>
+      <div class="pill">長度：<strong id="len">0</strong></div>
+      <div class="pill">速度：<strong id="spd">1x</strong></div>
+      <div class="pill">衝刺能量：<strong id="dash">100%</strong></div>
+      <div class="pill">狀態：<strong id="status">待命</strong></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <h3 style="margin:6px 0">操作</h3>
+        <div class="badges">
+          <span class="tag">方向：<span class="kbd">↑ ← ↓ →</span> / 觸控按鈕</span>
+          <span class="tag">暫停：<span class="kbd">P</span></span>
+          <span class="tag">衝刺：<span class="kbd">Space</span></span>
+        </div>
+        <details style="margin-top:10px">
+          <summary>玩法與道具</summary>
+          <ul>
+            <li>綠🍏 食物：+1 分、+1 長度。</li>
+            <li>金⭐ 倍分：10 秒內分數 ×2。</li>
+            <li>藍🌀 幽靈：5 秒可穿過自己身體（牆仍然致命/可切換穿牆模式）。</li>
+            <li>紅⚡ 加速：5 秒提升 1.6x 速度。</li>
+            <li>每吃 5 個升級，基礎速度略增；可在設定勾選「穿牆」。</li>
+          </ul>
+        </details>
+      </div>
+      <div>
+        <h3 style="margin:6px 0">設定</h3>
+        <div class="row" style="margin:6px 0">
+          <label><input id="optWrap" type="checkbox"> 允許穿牆（從另一側出現）</label>
+        </div>
+        <div class="row" style="margin:6px 0">
+          <label>格子數（正方形邊）：</label>
+          <input id="optSize" type="number" min="12" max="64" value="24" class="btn" style="width:90px;text-align:center">
+          <button class="btn" id="btnResize">套用</button>
+        </div>
+        <div class="row" style="margin:6px 0">
+          <label>顏色主題：</label>
+          <select id="optTheme" class="btn">
+            <option value="neo">霓虹</option>
+            <option value="retro">復古綠幕</option>
+            <option value="candy">糖果</option>
+          </select>
+        </div>
+        <h3 style="margin:12px 0 6px">本機排行榜</h3>
+        <div class="lb" id="lb"></div>
+        <div class="row" style="margin-top:6px">
+          <input id="name" class="btn grow" placeholder="輸入名字以紀錄最高分">
+          <button id="save" class="btn accent">儲存成績</button>
+          <button id="clear" class="btn">清除</button>
+        </div>
       </div>
     </div>
-    <div class="row">
-      <div class="lbl">HV</div>
-      <div class="btns">
-        <input id="inHV" type="number" inputmode="decimal" step="0.1" value="513" />
-        <button class="btn" data-hv="-5">−5</button>
-        <button class="btn" data-hv="+5">+5</button>
-        <button class="btn" data-hv="-1">−1</button>
-        <button class="btn" data-hv="+1">+1</button>
-      </div>
-    </div>
+  </div>
 
-    <div class="muted">範圍建議：HRC <b>20–68</b>（對應 HV 約 <b>238–940</b>）。超出時採用鄰段斜率保守外推。</div>
-  </section>
-
-  <!-- 右：原理與對照 -->
-  <aside class="card pad">
-    <h2>計算方式與標準來源</h2>
-    <div class="muted">
-      以 <b>ASTM E140 / ISO 18265</b> 的鋼材（非奧斯田鐵鋼）等效轉換表為基礎，建立
-      <b>HRC 整數 20–68</b> 對應之 <b>HV</b>。整數點採 <b>查表</b>，
-      中間值採 <b>分段線性插值</b>；反向（HV→HRC）以單調表區段尋找＋插值。<br>
-      顯示規則：四捨五入到 1 位小數；若為整數則不顯示 <code>.0</code>。
+  <div class="panel controls">
+    <div class="dpad">
+      <button class="up"   data-dir="U">▲</button>
+      <button class="left" data-dir="L">◀</button>
+      <button class="right"data-dir="R">▶</button>
+      <button class="down" data-dir="D">▼</button>
     </div>
-
-    <h2 style="margin-top:14px">HRC→HV 對照（整數節點）</h2>
-    <div class="table-wrap">
-      <table aria-label="HRC HV lookup">
-        <thead><tr><th>HRC</th><th>HV</th><th>HRC</th><th>HV</th><th>HRC</th><th>HV</th></tr></thead>
-        <tbody id="tbl"></tbody>
-      </table>
-    </div>
-
-    <h2 style="margin-top:14px">備註 / 原始碼</h2>
-    <div class="muted" style="margin-bottom:8px">
-      - 僅作為表格換算輔助，實測仍受材質、負荷、表層梯度影響。<br>
-      - 需要離線安裝/PWA、螺絲 Core/Case 提示，可再加。
-    </div>
-    <button id="btnSrc" class="btn">🔍 查看完整原始碼</button>
-  </aside>
-</div>
-
-<!-- 原始碼 Modal -->
-<div class="modal" id="srcModal" aria-hidden="true">
-  <div class="modal-card">
-    <div class="modal-h">
-      <div class="ttl">本頁完整 HTML 原始碼</div>
-      <div class="actions">
-        <button id="btnCopy">複製到剪貼簿</button>
-        <button id="btnClose">關閉</button>
-      </div>
-    </div>
-    <div class="modal-b">
-      <pre id="srcBox"><code>載入中...</code></pre>
+    <div class="actions">
+      <button id="tPause">暫停</button>
+      <button id="tDash">衝刺</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ===== 轉換表（HRC 20..68 → HV），非奧斯田鐵鋼，等效 ASTM E140/ISO 18265 ===== */
-const HRC_MIN = 20, HRC_MAX = 68;
-const HV_FROM_HRC = [
-  238,243,248,254,260,266,272,279,286,294,302,310,318,327,336,345,354,363,372,382,
-  392,402,412,423,434,446,458,471,484,498,513,528,544,560,577,595,613,633,653,674,
-  697,720,746,772,800,832,865,900,940
-]; // 49 筆：對應 HRC 20..68
+(() => {
+  // ====== 基本參數 ======
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const UI = {
+    score:   document.getElementById('score'),
+    level:   document.getElementById('level'),
+    len:     document.getElementById('len'),
+    spd:     document.getElementById('spd'),
+    dash:    document.getElementById('dash'),
+    status:  document.getElementById('status'),
+    toast:   document.getElementById('toast'),
+    toastText: document.getElementById('toastText'),
+    lb: document.getElementById('lb'),
+  };
 
-/* ===== 數字格式：最多 1 位小數；整數不顯示 .0 ===== */
-function fmt(x){
-  const v = Math.round(x * 10) / 10;         // 四捨五入到 0.1
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
-}
+  const BTN = {
+    start: document.getElementById('btnStart'),
+    pause: document.getElementById('btnPause'),
+    dash:  document.getElementById('btnDash'),
+    tPause:document.getElementById('tPause'),
+    tDash: document.getElementById('tDash'),
+    dpad:  document.querySelectorAll('.dpad button'),
+    resize:document.getElementById('btnResize'),
+    save:  document.getElementById('save'),
+    clear: document.getElementById('clear'),
+  };
 
-/* ===== 分段線性插值 ===== */
-function hvFromHrc(hrc){
-  if(!Number.isFinite(hrc)) return NaN;
-  if(hrc <= HRC_MIN){
-    const x0=HRC_MIN, x1=HRC_MIN+1, y0=HV_FROM_HRC[0], y1=HV_FROM_HRC[1];
-    return y0 + (hrc-x0)*(y1-y0)/(x1-x0);
-  }
-  if(hrc >= HRC_MAX){
-    const x0=HRC_MAX-1, x1=HRC_MAX, y0=HV_FROM_HRC.at(-2), y1=HV_FROM_HRC.at(-1);
-    return y0 + (hrc-x0)*(y1-y0)/(x1-x0);
-  }
-  const i = Math.floor(hrc) - HRC_MIN;
-  const x0 = HRC_MIN + i, x1 = x0 + 1;
-  const y0 = HV_FROM_HRC[i], y1 = HV_FROM_HRC[i+1];
-  const t = (hrc - x0) / (x1 - x0);
-  return y0 + t*(y1 - y0);
-}
+  const OPT = {
+    wrap: document.getElementById('optWrap'),
+    size: document.getElementById('optSize'),
+    theme:document.getElementById('optTheme'),
+    name: document.getElementById('name'),
+  };
 
-function hrcFromHv(hv){
-  if(!Number.isFinite(hv)) return NaN;
-  const Y = HV_FROM_HRC;
-  if(hv <= Y[0]){
-    const x0=HRC_MIN, x1=HRC_MIN+1, y0=Y[0], y1=Y[1];
-    return x0 + (hv - y0)*(x1 - x0)/(y1 - y0);
-  }
-  if(hv >= Y.at(-1)){
-    const x0=HRC_MAX-1, x1=HRC_MAX, y0=Y.at(-2), y1=Y.at(-1);
-    return x0 + (hv - y0)*(x1 - x0)/(y1 - y0);
-  }
-  // 二分搜尋 y[i] ≤ hv ≤ y[i+1]
-  let lo=0, hi=Y.length-1;
-  while(lo+1<hi){
-    const mid=(lo+hi)>>1;
-    if(Y[mid] <= hv) lo=mid; else hi=mid;
-  }
-  const i=lo;
-  const x0 = HRC_MIN + i, x1 = x0 + 1;
-  const y0 = Y[i], y1 = Y[i+1];
-  const t = (hv - y0)/(y1 - y0);
-  return x0 + t*(x1 - x0);
-}
+  const THEMES = {
+    neo:   { head:'#5ee2a0', body:'#3ecf8e', food:'#66ff66', grid:'#0d1422', bonus:'#ffd966', ghost:'#7cc7ff', boost:'#ff8888' },
+    retro: { head:'#00ff80', body:'#00bf60', food:'#00ff00', grid:'#002b13', bonus:'#ffff00', ghost:'#00e6ff', boost:'#ffcc00' },
+    candy: { head:'#ff80bf', body:'#ff66aa', food:'#66ffcc', grid:'#1a0d17', bonus:'#ffe680', ghost:'#80d4ff', boost:'#ff9999' },
+  };
 
-/* ===== 互相更新（輸入時不強制格式；失焦時才統一） ===== */
-const inHRC = document.querySelector('#inHRC');
-const inHV  = document.querySelector('#inHV');
-let updating = false;
-let lastValidHRC = 50;
-let lastValidHV  = 513;
+  // ====== 遊戲狀態 ======
+  let gridN = 24, cell = Math.floor(cvs.width / gridN);
+  let running=false, paused=false, wrap=false, tickBase=6, tick=6, tickAccum=0, last=0;
+  let score=0, level=1, foodsEaten=0;
+  let dir='R', nextDir='R';
+  let snake=[], grow=0;
+  let food=null, power=null;
+  let dashEnergy=100, isDashing=false, bonus = { x2:false, until:0 }, ghost={ on:false, until:0 }, boost={ on:false, until:0 };
 
-// 判斷是否為暫時輸入（允許 '-', '.', '-.', '5.' 等）
-const isTyping = s => s === '' || s === '-' || s === '.' || s === '-.' || /^-?\d+\.$/.test(s);
+  // 地圖佔用檢查
+  const occ = () => {
+    const set = new Set(snake.map(p=>p.x+','+p.y));
+    if(food) set.add('F:'+food.x+','+food.y);
+    if(power) set.add('P:'+power.x+','+power.y);
+    return set;
+  };
 
-function onHRCInput(){
-  if(updating) return;
-  const s = inHRC.value.trim();
-  if(isTyping(s)) return;
-  const v = parseFloat(s);
-  if(Number.isFinite(v)){
-    lastValidHRC = v;
-    updating = true;
-    const hv = hvFromHrc(v);
-    if(Number.isFinite(hv)) inHV.value = String(hv); // 輸入時不同步格式
-    updating = false;
+  function reset() {
+    cell = Math.floor(cvs.width / gridN);
+    score=0; level=1; foodsEaten=0;
+    dir='R'; nextDir='R';
+    grow=3;
+    dashEnergy=100; isDashing=false;
+    bonus={x2:false,until:0}; ghost={on:false,until:0}; boost={on:false,until:0};
+    tickBase=6; tick=tickBase; tickAccum=0; last=0;
+    // 初始蛇
+    const cx=Math.floor(gridN/3), cy=Math.floor(gridN/2);
+    snake=[{x:cx, y:cy, t:Date.now()}];
+    placeFood(); power=null;
+    running=true; paused=false;
+    uiFlash('開始！祝好胃口 😋');
+    updateHUD();
   }
-}
-function onHVInput(){
-  if(updating) return;
-  const s = inHV.value.trim();
-  if(isTyping(s)) return;
-  const v = parseFloat(s);
-  if(Number.isFinite(v)){
-    lastValidHV = v;
-    updating = true;
-    const h = hrcFromHv(v);
-    if(Number.isFinite(h)) inHRC.value = String(h);
-    updating = false;
-  }
-}
-function onHRCBlur(){
-  const v = parseFloat(inHRC.value);
-  updating = true;
-  if(Number.isFinite(v)){
-    lastValidHRC = v;
-    inHRC.value = fmt(v);
-    const hv = hvFromHrc(v);
-    if(Number.isFinite(hv)){ lastValidHV = hv; inHV.value = fmt(hv); }
-  }else{
-    inHRC.value = fmt(lastValidHRC);
-    const hv = hvFromHrc(lastValidHRC);
-    if(Number.isFinite(hv)){ lastValidHV = hv; inHV.value = fmt(hv); }
-  }
-  updating = false;
-}
-function onHVBlur(){
-  const v = parseFloat(inHV.value);
-  updating = true;
-  if(Number.isFinite(v)){
-    lastValidHV = v;
-    inHV.value = fmt(v);
-    const h = hrcFromHv(v);
-    if(Number.isFinite(h)){ lastValidHRC = h; inHRC.value = fmt(h); }
-  }else{
-    inHV.value = fmt(lastValidHV);
-    const h = hrcFromHv(lastValidHV);
-    if(Number.isFinite(h)){ lastValidHRC = h; inHRC.value = fmt(h); }
-  }
-  updating = false;
-}
 
-/* 綁定事件 */
-inHRC.addEventListener('input', onHRCInput);
-inHV .addEventListener('input', onHVInput);
-inHRC.addEventListener('blur', onHRCBlur);
-inHV .addEventListener('blur', onHVBlur);
+  function updateHUD() {
+    UI.score.textContent=score;
+    UI.level.textContent=level;
+    UI.len.textContent=snake.length;
+    UI.spd.textContent=(boost.on? (1.6).toFixed(1):1)+'x';
+    UI.dash.textContent=Math.round(dashEnergy)+'%';
+    UI.status.textContent = paused? '暫停' : (running? '進行中':'待命');
+  }
 
-/* 快捷按鈕 */
-document.querySelectorAll('[data-hrc]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const cur = parseFloat(inHRC.value||lastValidHRC);
-    const delta = parseFloat(btn.dataset.hrc);
-    const v = (Number.isFinite(cur)?cur:lastValidHRC) + delta;
-    lastValidHRC = v;
-    updating = true;
-    inHRC.value = fmt(v);
-    const hv = hvFromHrc(v);
-    if(Number.isFinite(hv)) { lastValidHV = hv; inHV.value = fmt(hv); }
-    updating = false;
+  function uiFlash(text, ms=1200){
+    UI.toastText.textContent=text;
+    UI.toast.style.display='';
+    clearTimeout(uiFlash._t);
+    uiFlash._t=setTimeout(()=>UI.toast.style.display='none', ms);
+  }
+
+  function rngInt(n){ return Math.floor(Math.random()*n); }
+
+  function placeFood() {
+    let tries=0;
+    while(true){
+      const x=rngInt(gridN), y=rngInt(gridN);
+      if(!snake.some(p=>p.x===x && p.y===y) && (!power || power.x!==x || power.y!==y)){
+        food={x,y}; return;
+      }
+      if(++tries>500) break;
+    }
+  }
+
+  function placePower() {
+    const types=['x2','ghost','boost'];
+    const kind = types[rngInt(types.length)];
+    let x=0,y=0,tries=0;
+    while(true){
+      x=rngInt(gridN); y=rngInt(gridN);
+      if(!snake.some(p=>p.x===x && p.y===y) && (!food || (food.x!==x || food.y!==y))) break;
+      if(++tries>500) return;
+    }
+    power={x,y,kind,until:Date.now()+10000};
+    const map={x2:'⭐ 倍分',ghost:'🌀 幽靈',boost:'⚡ 加速'};
+    uiFlash('道具出現：'+map[kind], 1000);
+  }
+
+  function setDir(d){
+    const opp = {U:'D',D:'U',L:'R',R:'L'};
+    if(opp[d]===dir) return; // 不允許直接反向
+    nextDir=d;
+  }
+
+  // ====== 碰撞 / 邏輯 ======
+  function step() {
+    if(!running || paused) return;
+    dir = nextDir;
+
+    const head = {...snake[0]};
+    if(dir==='U') head.y--;
+    else if(dir==='D') head.y++;
+    else if(dir==='L') head.x--;
+    else if(dir==='R') head.x++;
+
+    if(wrap){
+      head.x = (head.x+gridN)%gridN;
+      head.y = (head.y+gridN)%gridN;
+    } else {
+      if(head.x<0||head.y<0||head.x>=gridN||head.y>=gridN) return gameOver();
+    }
+
+    // 自咬（可幽靈）
+    if(!ghost.on && snake.some(p=>p.x===head.x && p.y===head.y)) return gameOver();
+
+    snake.unshift(head);
+
+    // 食物
+    if(food && head.x===food.x && head.y===food.y){
+      const gain = bonus.x2?2:1;
+      score += gain;
+      foodsEaten++;
+      grow += 1;
+      placeFood();
+      // 每 5 個升級 & 增速（上限）
+      if(foodsEaten%5===0){
+        level++;
+        tickBase = Math.max(2, tickBase-0.5);
+        uiFlash('升級！速度提升');
+      }
+      // 30% 機率生成道具
+      if(!power && Math.random()<0.3) placePower();
+    }
+
+    // 道具
+    if(power && head.x===power.x && head.y===power.y){
+      const now=Date.now();
+      if(power.kind==='x2'){ bonus={x2:true,until:now+10000}; uiFlash('⭐ 倍分 10 秒');}
+      if(power.kind==='ghost'){ ghost={on:true,until:now+5000}; uiFlash('🌀 幽靈 5 秒');}
+      if(power.kind==='boost'){ boost={on:true,until:now+5000}; uiFlash('⚡ 加速 5 秒');}
+      power=null;
+    }
+
+    // 成長 or 移動
+    if(grow>0) { grow--; }
+    else { snake.pop(); }
+
+    // 能量與狀態時間
+    const now=Date.now();
+    if(isDashing){ dashEnergy=Math.max(0, dashEnergy-1.8); if(dashEnergy<=0) isDashing=false; }
+    else { dashEnergy=Math.min(100, dashEnergy+0.6); }
+
+    if(bonus.x2 && now>bonus.until) bonus.x2=false;
+    if(ghost.on && now>ghost.until) ghost.on=false;
+    if(boost.on && now>boost.until) boost.on=false;
+
+    updateHUD();
+  }
+
+  function gameOver(){
+    running=false;
+    uiFlash('💀 掛了！分數：'+score, 1600);
+    UI.status.textContent='結束';
+  }
+
+  // ====== 繪製 ======
+  function drawGrid(theme){
+    ctx.fillStyle = theme.grid;
+    ctx.fillRect(0,0,cvs.width,cvs.height);
+    const g = ctx.createLinearGradient(0,0,cvs.width,cvs.height);
+    g.addColorStop(0,'#0a0f18'); g.addColorStop(1,'#0b1220');
+    ctx.fillStyle = g; ctx.fillRect(0,0,cvs.width,cvs.height);
+
+    // 細格
+    ctx.strokeStyle='rgba(255,255,255,0.05)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let i=1;i<gridN;i++){
+      const p=i*cell+.5;
+      ctx.moveTo(p,0); ctx.lineTo(p,cvs.height);
+      ctx.moveTo(0,p); ctx.lineTo(cvs.width,p);
+    }
+    ctx.stroke();
+  }
+
+  function draw(theme){
+    drawGrid(theme);
+
+    // 食物
+    if(food){
+      ctx.fillStyle=theme.food;
+      drawRound(food.x,food.y,.2);
+    }
+
+    // 道具
+    if(power){
+      const c = power.kind==='x2'?theme.bonus: power.kind==='ghost'?theme.ghost:theme.boost;
+      ctx.fillStyle=c;
+      drawStar(power.x,power.y,6, .38);
+    }
+
+    // 蛇
+    for(let i=snake.length-1;i>=0;i--){
+      ctx.fillStyle = i===0 ? theme.head : theme.body;
+      drawRound(snake[i].x, snake[i].y, i===0? .25 : .3);
+    }
+
+    // 狀態提示
+    if(paused){
+      ctx.fillStyle='rgba(0,0,0,.4)';
+      ctx.fillRect(0,0,cvs.width,cvs.height);
+      textCenter('暫停中', 36);
+    } else if(!running){
+      ctx.fillStyle='rgba(0,0,0,.35)';
+      ctx.fillRect(0,0,cvs.width,cvs.height);
+      textCenter('按「開始」或 Enter 開始', 28);
+    }
+  }
+
+  function drawRound(x,y,margin){
+    const px=x*cell, py=y*cell, s=cell;
+    const r = Math.max(2, s*margin);
+    ctx.beginPath();
+    ctx.roundRect(px+2,py+2,s-4,s-4,r);
+    ctx.fill();
+  }
+  function drawStar(x,y,spikes,scale){
+    const cx = x*cell + cell/2, cy = y*cell + cell/2;
+    const outer = cell*scale, inner = outer*0.5;
+    let rot=Math.PI/2*3, step=Math.PI/spikes;
+    ctx.beginPath(); ctx.moveTo(cx, cy - outer);
+    for(let i=0;i<spikes;i++){
+      ctx.lineTo(cx+Math.cos(rot)*outer, cy+Math.sin(rot)*outer); rot+=step;
+      ctx.lineTo(cx+Math.cos(rot)*inner, cy+Math.sin(rot)*inner); rot+=step;
+    }
+    ctx.lineTo(cx, cy - outer); ctx.closePath(); ctx.fill();
+  }
+  function textCenter(t, size){
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.font=`${size}px/1.2 ui-sans-serif,system-ui`;
+    ctx.textAlign='center';
+    ctx.fillText(t, cvs.width/2, cvs.height/2);
+  }
+
+  // ====== 迴圈（固定步長） ======
+  function loop(ts){
+    const theme = THEMES[OPT.theme.value] || THEMES.neo;
+    const speedFactor = (boost.on?1.6:1) * (isDashing?1.35:1);
+    const stepsPerSec = 12; // 基準
+    const stepMS = 1000 / (stepsPerSec * ( (12 - tickBase) / 6 + 1) * speedFactor);
+    if(!last) last=ts;
+    const dt = ts-last; last=ts;
+    tickAccum += dt;
+    while(tickAccum >= stepMS){
+      step();
+      tickAccum -= stepMS;
+    }
+    draw(theme);
+    requestAnimationFrame(loop);
+  }
+
+  // ====== 事件 ======
+  window.addEventListener('resize', () => {
+    // 固定平方比例，寬度滿版
+    const side = Math.min(window.innerWidth-24, 720);
+    cvs.style.width = side+'px';
   });
-});
-document.querySelectorAll('[data-hv]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const cur = parseFloat(inHV.value||lastValidHV);
-    const delta = parseFloat(btn.dataset.hv);
-    const v = (Number.isFinite(cur)?cur:lastValidHV) + delta;
-    lastValidHV = v;
-    updating = true;
-    inHV.value = fmt(v);
-    const h = hrcFromHv(v);
-    if(Number.isFinite(h)) { lastValidHRC = h; inHRC.value = fmt(h); }
-    updating = false;
-  });
-});
+  window.dispatchEvent(new Event('resize'));
 
-/* 對照表（右側） */
-(function buildTable(){
-  const tbody = document.querySelector('#tbl');
-  const rows = [];
-  const H = [];
-  for(let h=HRC_MIN; h<=HRC_MAX; h++) H.push(h);
-  const col = Math.ceil(H.length/3);
-  for(let r=0;r<col;r++){
-    const c1=H[r], c2=H[r+col], c3=H[r+col*2];
-    const hv1=c1!=null? fmt(HV_FROM_HRC[c1-HRC_MIN]) : '';
-    const hv2=c2!=null? fmt(HV_FROM_HRC[c2-HRC_MIN]) : '';
-    const hv3=c3!=null? fmt(HV_FROM_HRC[c3-HRC_MIN]) : '';
-    rows.push(`<tr>
-      <td>${c1??''}</td><td>${hv1}</td>
-      <td>${c2??''}</td><td>${hv2}</td>
-      <td>${c3??''}</td><td>${hv3}</td>
-    </tr>`);
+  document.addEventListener('keydown', e=>{
+    const k=e.key.toLowerCase();
+    if(k==='arrowup' || k==='w') setDir('U');
+    else if(k==='arrowdown' || k==='s') setDir('D');
+    else if(k==='arrowleft' || k==='a') setDir('L');
+    else if(k==='arrowright' || k==='d') setDir('R');
+    else if(k==='p') togglePause();
+    else if(k===' ') dash(true);
+    else if(k==='enter' && !running) reset();
+  });
+  document.addEventListener('keyup', e=>{
+    if(e.key===' ') dash(false);
+  });
+
+  BTN.start.onclick = ()=> reset();
+  BTN.pause.onclick = ()=> togglePause();
+  BTN.dash.onmousedown = ()=> dash(true);
+  BTN.dash.onmouseup   = ()=> dash(false);
+  BTN.tPause.onclick = ()=> togglePause();
+  BTN.tDash.onmousedown=()=> dash(true);
+  BTN.tDash.onmouseup  =()=> dash(false);
+  BTN.resize.onclick = ()=> { gridN = clamp(parseInt(OPT.size.value||24,10),12,64); reset(); }
+  BTN.save.onclick = saveScore;
+  BTN.clear.onclick= ()=>{ localStorage.removeItem('super-snake-lb'); renderLB(); }
+
+  BTN.dpad.forEach(b=>{
+    b.addEventListener('touchstart', ev=>{ ev.preventDefault(); setDir(b.dataset.dir); }, {passive:false});
+    b.addEventListener('mousedown', ()=> setDir(b.dataset.dir));
+  });
+
+  function togglePause(){
+    if(!running) return;
+    paused = !paused;
+    updateHUD();
   }
-  tbody.innerHTML = rows.join('');
+
+  function dash(on){
+    if(on){
+      if(dashEnergy>5){ isDashing=true; BTN.dash.disabled=false; }
+      else { BTN.dash.disabled=true; }
+    } else {
+      isDashing=false; BTN.dash.disabled=false;
+    }
+  }
+
+  function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
+
+  // ====== 排名 ======
+  function loadLB(){
+    try{ return JSON.parse(localStorage.getItem('super-snake-lb')||'[]'); }catch{ return []; }
+  }
+  function saveLB(list){
+    localStorage.setItem('super-snake-lb', JSON.stringify(list.slice(0,20)));
+  }
+  function renderLB(){
+    const list = loadLB().sort((a,b)=>b.score-a.score).slice(0,10);
+    UI.lb.innerHTML = list.map((r,i)=>`<div><span>#${i+1} ${escapeHTML(r.name||'佚名')}</span><span>${r.score}</span></div>`).join('') || '<div>尚無紀錄</div>';
+  }
+  function saveScore(){
+    const name = OPT.name.value.trim() || '佚名';
+    const list = loadLB();
+    list.push({name, score, at: Date.now()});
+    saveLB(list); renderLB();
+  }
+  function escapeHTML(s){ return s.replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+  // ====== 進入點 ======
+  OPT.wrap.addEventListener('change', ()=>{ wrap = OPT.wrap.checked; });
+  OPT.theme.addEventListener('change', ()=>{ /* 即時切換只是顏色，不需重繪特別處理 */ });
+  renderLB();
+  requestAnimationFrame(loop);
 })();
-
-/* 初始同步（避免空白） */
-inHRC.value = fmt(lastValidHRC);
-inHV.value  = fmt(lastValidHV);
-
-/* ===== 查看完整原始碼：將整頁 outerHTML 轉義後顯示在 Modal ===== */
-const btnSrc = document.getElementById('btnSrc');
-const srcModal = document.getElementById('srcModal');
-const srcBox = document.getElementById('srcBox');
-const btnClose = document.getElementById('btnClose');
-const btnCopy = document.getElementById('btnCopy');
-
-// 轉義 HTML
-function escapeHTML(s){
-  return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-}
-
-btnSrc.addEventListener('click', ()=>{
-  const html = document.documentElement.outerHTML;
-  srcBox.innerHTML = '<code>'+ escapeHTML(html) +'</code>';
-  srcModal.classList.add('open');
-  srcModal.setAttribute('aria-hidden','false');
-});
-btnClose.addEventListener('click', ()=>{
-  srcModal.classList.remove('open');
-  srcModal.setAttribute('aria-hidden','true');
-});
-srcModal.addEventListener('click', (e)=>{
-  if(e.target === srcModal){ btnClose.click(); }
-});
-btnCopy.addEventListener('click', async ()=>{
-  const text = document.documentElement.outerHTML;
-  try{
-    await navigator.clipboard.writeText(text);
-    btnCopy.textContent = '已複製！';
-    setTimeout(()=>btnCopy.textContent='複製到剪貼簿',1200);
-  }catch{
-    btnCopy.textContent = '複製失敗';
-    setTimeout(()=>btnCopy.textContent='複製到剪貼簿',1200);
-  }
-});
 </script>
 </body>
 </html>
